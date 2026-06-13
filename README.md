@@ -24,7 +24,8 @@ python -m http.server 8080
 
 `main` ブランチの `index.html` がそのまま公開されます。
 
-- サイト: `https://<username>.github.io/home_bar/`
+- リポジトリ: https://github.com/minasetan/home_bar
+- サイト: https://minasetan.github.io/home_bar/
 
 ## データ形式
 
