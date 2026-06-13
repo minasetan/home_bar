@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Bar — 在庫一覧</title>
+  <meta name="description" content="ホームバーのお酒・材料在庫リスト">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0e0c;
+      --surface: #1a1814;
+      --surface2: #242019;
+      --border: #3d3528;
+      --text: #f0ebe0;
+      --muted: #9a9080;
+      --accent: #c9a227;
+      --accent-dim: #8a7020;
+      --tag-bg: #2a2418;
+      --abv-high: #c45c4a;
+      --abv-mid: #c9a227;
+      --abv-low: #6a9e6a;
+      --abv-zero: #5a7a9a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 162, 39, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(196, 92, 74, 0.05), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.35rem 1rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .stat strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-wrap {
+      flex: 1 1 240px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 0.7rem 1rem 0.7rem 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--accent-dim);
+    }
+
+    .search-wrap input::placeholder { color: var(--muted); }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      fill: var(--muted);
+    }
+
+    select {
+      padding: 0.7rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .group-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .group-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .card:hover {
+      border-color: var(--accent-dim);
+      transform: translateY(-1px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .abv {
+      flex-shrink: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .abv-high { background: rgba(196, 92, 74, 0.2); color: var(--abv-high); }
+    .abv-mid  { background: rgba(201, 162, 39, 0.2); color: var(--abv-mid); }
+    .abv-low  { background: rgba(106, 158, 106, 0.2); color: var(--abv-low); }
+    .abv-zero { background: rgba(90, 122, 154, 0.2); color: var(--abv-zero); }
+
+    .common-name {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      padding: 0.15rem 0.5rem;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+    }
+
+    .desc {
+      font-size: 0.82rem;
+      color: #b8b0a0;
+      line-height: 1.55;
+    }
+
+    .meta {
+      margin-top: 0.75rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 0.6rem;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+    }
+
+    .loading, .error {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--muted);
+    }
+
+    .error { color: var(--abv-high); }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    footer a { color: var(--accent-dim); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 480px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Home Bar</h1>
+      <p>ホームバー在庫一覧</p>
+      <div class="stats" id="stats"></div>
+    </header>
+
+    <div class="controls">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z"/></svg>
+        <input type="search" id="search" placeholder="名称・種別・説明で検索…" autocomplete="off">
+      </div>
+      <select id="filter-group">
+        <option value="">すべてのグループ</option>
+      </select>
+      <select id="filter-type">
+        <option value="">すべての種別</option>
+      </select>
+    </div>
+
+    <main id="main">
+      <p class="loading">読み込み中…</p>
+    </main>
+
+    <footer>
+      データ: <a href="inventory.json">inventory.json</a>
+      &nbsp;·&nbsp;
+      最終更新: <span id="updated-at">—</span>
+    </footer>
+  </div>
+
+  <script>
+    const GROUP_ORDER = [
+      "新着・未分類",
+      "材料・割り材",
+      "テキーラ・メスカル",
+      "ラム",
+      "ウイスキー",
+      "ブランデー",
+      "スピリッツ・焼酎・泡盛",
+      "リキュール・その他"
+    ];
+
+    let allIngredients = [];
+
+    function abvClass(abv) {
+      if (abv === 0) return "abv-zero";
+      if (abv >= 40) return "abv-high";
+      if (abv >= 20) return "abv-mid";
+      return "abv-low";
+    }
+
+    function abvLabel(abv) {
+      if (abv === 0) return "非アルコール";
+      return `${abv}%`;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderCard(item) {
+      return `
+        <article class="card" data-id="${escapeHtml(item.id)}">
+          <div class="card-header">
+            <h2 class="card-name">${escapeHtml(item.name)}</h2>
+            <span class="abv ${abvClass(item.abv)}">${abvLabel(item.abv)}</span>
+          </div>
+          <p class="common-name">${escapeHtml(item.commonName)}</p>
+          <div class="tags">
+            <span class="tag">${escapeHtml(item.type)}</span>
+          </div>
+          <p class="desc">${escapeHtml(item.description)}</p>
+          <p class="meta">追加 ${item.addedAt} · 更新 ${item.updatedAt}</p>
+        </article>`;
+    }
+
+    function render(items) {
+      const main = document.getElementById("main");
+
+      if (items.length === 0) {
+        main.innerHTML = '<p class="empty">該当する材料がありません</p>';
+        return;
+      }
+
+      const grouped = {};
+      for (const item of items) {
+        (grouped[item.group] ??= []).push(item);
+      }
+
+      const order = [...GROUP_ORDER.filter(g => grouped[g]), ...Object.keys(grouped).filter(g => !GROUP_ORDER.includes(g))];
+
+      main.innerHTML = order.map(group => `
+        <section class="group-section">
+          <h2 class="group-title">${escapeHtml(group)}（${grouped[group].length}）</h2>
+          <div class="cards">
+            ${grouped[group].map(renderCard).join("")}
+          </div>
+        </section>
+      `).join("");
+    }
+
+    function updateStats(items) {
+      const types = new Set(items.map(i => i.type));
+      const alcoholic = items.filter(i => i.abv > 0).length;
+      document.getElementById("stats").innerHTML = `
+        <span class="stat">全 <strong>${items.length}</strong> 品</span>
+        <span class="stat">お酒 <strong>${alcoholic}</strong> 品</span>
+        <span class="stat">種別 <strong>${types.size}</strong> 種</span>
+      `;
+    }
+
+    function populateFilters(items) {
+      const groupSel = document.getElementById("filter-group");
+      const typeSel = document.getElementById("filter-type");
+
+      const groups = [...new Set(items.map(i => i.group))].sort((a, b) => {
+        const ai = GROUP_ORDER.indexOf(a);
+        const bi = GROUP_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b, "ja");
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+
+      const types = [...new Set(items.map(i => i.type))].sort((a, b) => a.localeCompare(b, "ja"));
+
+      for (const g of groups) {
+        const opt = document.createElement("option");
+        opt.value = g;
+        opt.textContent = g;
+        groupSel.appendChild(opt);
+      }
+
+      for (const t of types) {
+        const opt = document.createElement("option");
+        opt.value = t;
+        opt.textContent = t;
+        typeSel.appendChild(opt);
+      }
+    }
+
+    function applyFilters() {
+      const q = document.getElementById("search").value.trim().toLowerCase();
+      const group = document.getElementById("filter-group").value;
+      const type = document.getElementById("filter-type").value;
+
+      const filtered = allIngredients.filter(item => {
+        if (group && item.group !== group) return false;
+        if (type && item.type !== type) return false;
+        if (!q) return true;
+        const hay = [item.name, item.commonName, item.type, item.description, item.group].join(" ").toLowerCase();
+        return hay.includes(q);
+      });
+
+      render(filtered);
+    }
+
+    async function init() {
+      try {
+        const res = await fetch("inventory.json");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        allIngredients = data.ingredients;
+        document.getElementById("updated-at").textContent = data.updatedAt ?? "—";
+        updateStats(allIngredients);
+        populateFilters(allIngredients);
+        render(allIngredients);
+
+        document.getElementById("search").addEventListener("input", applyFilters);
+        document.getElementById("filter-group").addEventListener("change", applyFilters);
+        document.getElementById("filter-type").addEventListener("change", applyFilters);
+      } catch (err) {
+        document.getElementById("main").innerHTML =
+          `<p class="error">inventory.json の読み込みに失敗しました。<br>${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

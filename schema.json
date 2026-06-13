@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Home Bar Inventory",
+  "description": "ホームバー材料在庫スキーマ",
+  "type": "object",
+  "required": ["version", "ingredients"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "データ形式のバージョン"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date",
+      "description": "ファイル全体の最終更新日"
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "commonName",
+          "type",
+          "abv",
+          "description",
+          "group",
+          "addedAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "一意識別子（スラッグ）"
+          },
+          "name": {
+            "type": "string",
+            "description": "在庫リスト上の名称"
+          },
+          "commonName": {
+            "type": "string",
+            "description": "日本語の一般的なお酒の名称"
+          },
+          "type": {
+            "type": "string",
+            "description": "お酒の種別"
+          },
+          "abv": {
+            "type": ["number", "null"],
+            "description": "アルコール度数（%）。非アルコールは0"
+          },
+          "description": {
+            "type": "string",
+            "description": "説明"
+          },
+          "group": {
+            "type": "string",
+            "description": "カテゴリグループ"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date",
+            "description": "追加日"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date",
+            "description": "更新日"
+          }
+        }
+      }
+    }
+  }
+}
